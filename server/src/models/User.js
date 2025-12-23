@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import bcrypt from "bcryptjs";
 const userSchema = new Schema(
   {
     name: {
@@ -32,5 +32,21 @@ const userSchema = new Schema(
     timestamps: true, // Automatically adds createdAt and updatedAt dates
   }
 );
+
+// 🔒 PASSWORD HASHING (Modern Syntax)
+// No 'next' parameter needed!
+userSchema.pre("save", async function () {
+  // 1. If password wasn't changed, just return (exit the function)
+  if (!this.isModified("password")) return;
+
+  // 2. Hash the password
+  this.password = await bcrypt.hash(this.password, 10);
+
+  // 3. Function ends here, Mongoose automatically saves
+});
+
+userSchema.methods.isPasswordCorrect = async function (candidatePassword)  {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 export const User = mongoose.model("User", userSchema);
